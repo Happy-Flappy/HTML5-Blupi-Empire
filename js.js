@@ -310,7 +310,7 @@ function getRand(max)
 function loop()
 {        
     
-    blupi.push(new Blupi(100,-60));
+    blupi.push(new Blupi(getRand(groundImg.width),-getRand(200)));
     blupi[blupi.length-1].destination = groundImg.width *2;
     
     view.x = blupi[selected].origin.x - canvas.width/2;
