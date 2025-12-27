@@ -309,6 +309,10 @@ function getRand(max)
 
 function loop()
 {        
+    
+    blupi.push(new Blupi(100,-60));
+    blupi[blupi.length-1].destination = groundImg.width *2;
+    
     view.x = blupi[selected].origin.x - canvas.width/2;
     taskbar.update();
     for(let a=0;a < blupi.length;a++)
