@@ -436,7 +436,7 @@ let input =
         
         // listen for blur events to clear input when window loses focus
         window.addEventListener("blur", () => {
-            this.keysPressed.clear();
+            this.keysPressed = {};
             this.mouseClick = false;
         }, false);
         
