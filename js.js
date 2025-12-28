@@ -518,13 +518,19 @@ function getRand(max)
     return Math.floor(Math.random() * max);
 }
 
+let addBlupiTimer = 0;
 
 function loop()
 {        
     input.startFrame();
-    blupi.push(new Blupi(getRand(groundImg.width),-getRand(200)));
-    blupi[blupi.length-1].destination = groundImg.width *2;
     
+    addBlupiTimer++;
+    if(addBlupiTimer > 120)
+    {
+        addBlupiTimer = 0;
+        blupi.push(new Blupi(getRand(groundImg.width),-getRand(200)));
+        blupi[blupi.length-1].destination = groundImg.width *2;
+    }
     view.x = blupi[selected].origin.x - canvas.width/2;
     taskbar.update();
     for(let a=0;a < blupi.length;a++)
