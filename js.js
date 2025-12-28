@@ -36,25 +36,25 @@ document.body.appendChild(canvas);
 blupiImg = new Image();
 blupiImg.ready = false;
 blupiImg.onload = checkReady;
-blupiImg.src = "blupiyellow.png";
+blupiImg.src = "https://happy-flappy.github.io/HTML5-Blupi-Empire/blupiyellow.png";
 
 skyImg = new Image(); 
 skyImg.ready = false;
 skyImg.onload = checkReady;
-skyImg.src = "sky(2).png";
+skyImg.src = "https://happy-flappy.github.io/HTML5-Blupi-Empire/sky(2).png";
 
 
 groundImg = new Image(); 
 groundImg.ready = false;
 groundImg.onload = checkReady;
-groundImg.src = "https://github.com/Happy-Flappy/HTML5-Blupi-Empire/blob/main/ground.png";
+groundImg.src = "https://happy-flappy.github.io/HTML5-Blupi-Empire/ground.png";
 
 
 
 buttonsImg = new Image();
 buttonsImg.ready = false;
 buttonsImg.onload = checkReady;
-buttonsImg.src = "buttons.png";
+buttonsImg.src = "https://happy-flappy.github.io/HTML5-Blupi-Empire/buttons.png";
 
 
 const totalImages = 4;
