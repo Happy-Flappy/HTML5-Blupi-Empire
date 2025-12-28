@@ -25,9 +25,10 @@ canvas.style.left = '0';
 canvas.style.width = '100%';
 canvas.style.height = '100%';
 canvas.style.display = 'block';
+//canvas.style.objectFit = 'contain';
+//canvas.style.backgroundColor = '#000'; 
 
 
-const canvasRect = canvas.getBoundingClientRect();
 
 document.body.appendChild(canvas);
 
@@ -49,6 +50,17 @@ groundImg.onload = checkReady;
 groundImg.src = "ground.png";
 
 
+
+
+buttonsImg = new Image();
+buttonsImg.ready = false;
+buttonsImg.onload = checkReady;
+buttonsImg.src = "buttons.png";
+
+
+const totalImages = 4;
+
+
 let selected = 0;
 
 
@@ -61,22 +73,143 @@ var view = {
 
 
 
+class Rect
+{
+    constructor(left,top,width,height)
+    {
+        this.left = left;
+        this.top = top;
+        this.width = width;
+        this.height = height;
+    }
+}
+
+
+class Button
+{
+    constructor()
+    {
+        this.hover = new Rect(0,0,0,0);
+        this.up = new Rect(0,0,0,0);
+        this.down = new Rect(0,0,0,0);
+        this.icon = new Rect(0,0,0,0);
+        this.x = 0;
+        this.y = 0;
+        this.scale = 2;
+        this.rect = this.up;
+        this.visible = true;
+    }
+    
+    
+    hovering()
+    {
+        const sm = input.screenMouse;
+        return sm.x >= this.x && 
+               sm.x <= this.x + this.up.width * this.scale && 
+               sm.y >= this.y && 
+               sm.y <= this.y + this.up.height * this.scale;
+
+    }
+    
+    
+    
+    getClick()
+    {
+        return input.mouseClick && this.hovering();
+    }
+    
+    
+    
+    draw()
+    {
+        if(!this.visible)
+            return;
+        
+        if(!input.mouseClick && this.hovering())
+            this.rect = this.hover;
+        if(input.mouseClick && this.hovering())
+            this.rect = this.down;
+        if(!input.mouseClick && !this.hovering())
+            this.rect = this.up;
+        context.drawImage(buttonsImg,this.rect.left,this.rect.top,this.rect.width,this.rect.height,this.x,this.y,this.rect.width * this.scale,this.rect.height * this.scale);
+        context.drawImage(buttonsImg,this.icon.left,this.icon.top,this.icon.width,this.icon.height,this.x + (this.up.width * 0.25) ,this.y + (this.up.height * 0.25),this.icon.width * this.scale,this.icon.height * this.scale);
+    }
+}
+
+
+
 let taskbar = {
     
-    update(){
+    buttons: [],
+    
+    
+    init()
+    {
+        this.buttons.push(new Button());
+        this.buttons[0].scale = 1;
+        this.buttons[0].x = 0;
+        this.buttons[0].y = canvas.height - 41;
+        this.buttons[0].up.left = 0;
+        this.buttons[0].up.top = 0;
+        this.buttons[0].up.width = 41;
+        this.buttons[0].up.height = 41;
         
-        //Detect if ground clicked on and set destination if so.
+        this.buttons[0].hover =  {...this.buttons[0].up};
+        this.buttons[0].hover.left = 80;
         
-        if(mouseclick == 0)
-        {
-            if(MPosition.y > ground.groundEdge[MPosition.x])
-            {
-                blupi[selected].destination = MPosition.x;
-            }
-        }
+        
+        this.buttons[0].down =  {...this.buttons[0].hover};
+        this.buttons[0].down.left = 120;
+        
         
     },
     
+    
+    update()
+    {
+        const vm = input.viewMouse;
+        //check if ground clicked and set destination if so.
+        
+      
+        let btnPressed = false;
+        for(let a = 0; a<this.buttons.length;a++)
+        {
+            
+            if(this.buttons[a].getClick())
+            {
+                btnPressed = true;
+            }
+            
+        }
+        
+        if(input.mouseClick && !btnPressed)
+        {
+            if(vm.x >= 0 && vm.x < ground.groundEdge.length)
+            {
+                if(vm.y > ground.groundEdge[vm.x])
+                    blupi[selected].destination = vm.x;
+            }
+        }
+        
+        if(this.buttons[0].getClick())
+        {
+            canvas.requestFullscreen();
+        }
+        if(document.fullscreenElement !== null)
+            this.buttons[0].visible = false;
+        else
+            this.buttons[0].visible = true;
+        
+        
+    },
+    
+    draw()
+    {
+        for(let a=0;a<this.buttons.length;a++)
+        {
+            this.buttons[a].draw();
+        }
+    }
     
 };
 
@@ -142,10 +275,10 @@ class Blupi
     }
     
     update() {
-        if (37 in keyclick) {
+        if (37 in input.keyClick) {
             this.x -= 3;
         }
-        if (39 in keyclick) {
+        if (39 in input.keyClick) {
             this.x += 3;
         }
 
@@ -220,7 +353,130 @@ let ground = {
     
     draw()
     {
-        context.drawImage(groundImg,0,0,groundImg.width,groundImg.height,-view.x,-view.y,groundImg.width,groundImg.height);
+        context.drawImage(groundImg,0,0,groundImg.width,groundImg.height,-view.x,0,groundImg.width,groundImg.height);
+    }
+
+};
+
+
+
+
+
+//canvas scale from canvas width to display(screen) width.
+function getCanvasScale() {
+    const canvasRect = canvas.getBoundingClientRect();
+    return {
+        x: canvas.width / canvasRect.width,
+        y: canvas.height / canvasRect.height
+    };
+}
+
+
+
+
+let input = 
+{
+    
+
+
+    viewMouse: {x:0,y:0},
+    screenMouse: {x:0,y:0},
+    keyClick: {},
+    mouseClick: false,
+    requestViewMouse:{x:0,y:0},
+    requestScreenMouse:{x:0,y:0},
+    requestMouseClick: false,
+    requestKeyClick: {},
+    initialized: false,
+    
+    endFrame()
+    {
+        this.mouseClick = false;
+        this.requestMouseClick = false;
+    },
+    
+    
+    startFrame()
+    {
+        if(!initialized)
+            init();
+        //force input to be consistent for each frame. Only changes at start of frame.
+        this.viewMouse = this.requestViewMouse;    
+        this.screenMouse = this.requestScreenMouse;
+        this.mouseClick = this.requestMouseClick;
+        this.keyClick = this.requestKeyClick;
+    },
+    
+    
+    init() 
+    {
+        // Use arrow functions to preserve 'this' context
+        document.addEventListener("click",function (event) {
+            this.requestViewMouse = this.VMouse(event);
+            this.requestScreenMouse = this.SMouse(event);
+            this.requestMouseClick = true;
+
+        }.bind(this),false);
+
+    
+        document.addEventListener("keydown",function (event) {
+            this.keyClick[event.keyCode]=true;
+        }.bind(this),false);
+
+        document.addEventListener("keyup",function (event) {
+            delete this.keyClick[event.keyCode];
+        }.bind(this),false);
+        
+        
+        document.addEventListener("mousemove",function (event) {
+            this.requestViewMouse = this.VMouse(event);
+            this.requestScreenMouse = this.SMouse(event);            
+        }.bind(this),false);
+  
+        
+        // listen for blur events to clear input when window loses focus
+        window.addEventListener("blur", () => {
+            this.keysPressed.clear();
+            this.mouseClick = false;
+        }, false);
+        
+        // Prevent context menu on right click
+        canvas.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+        }, false);        
+        
+        initialized = true;
+    },
+
+
+    VMouse(event)
+    {
+        const canvasRect = canvas.getBoundingClientRect();
+        const scale = getCanvasScale();
+        let result = {
+            x: (event.clientX - canvasRect.left) * scale.x + view.x,
+            y: (event.clientY - canvasRect.top) * scale.y + view.y
+        };
+
+        result.x = Math.round(result.x);
+        result.y = Math.round(result.y);
+        return result;
+    },
+
+
+    SMouse(event)
+    {
+        const canvasRect = canvas.getBoundingClientRect();
+        const scale = getCanvasScale();
+        let result = {
+            x: (event.clientX - canvasRect.left) * scale.x,
+            y: (event.clientY - canvasRect.top) * scale.y
+        };
+
+        result.x = Math.round(result.x);
+        result.y = Math.round(result.y);
+        return result;
+
     }
 
 };
@@ -230,53 +486,7 @@ let ground = {
 
 
 
-
-
-
-let keyclick = {};
-let mouseclick = -1;
-
-let MPosition = {
-    x:0,
-    y:0
-};
-
-
-
-
-
-
-document.addEventListener("keydown",function (event) {
-    keyclick[event.keyCode]=true;
-},false);
-
-
-document.addEventListener("keyup",function (event) {
-    delete keyclick[event.keyCode];
-},false);
-
-
-document.addEventListener("mousedown",function (event) {
-    mouseclick = event.button;
-    MPosition.x = event.clientX - canvasRect.left + view.x;
-    MPosition.y = event.clientY - canvasRect.top + view.y;    
-});
-
-
-document.addEventListener("mouseup",function (event) {
-    mouseclick = -1;
-});
-
-
-document.addEventListener("mousemove",function (event) {
-    MPosition.x = event.clientX - canvasRect.left + view.x;
-    MPosition.y = event.clientY - canvasRect.top + view.y;
-});
-
-
-
 var imagesLoaded = 0;
-const totalImages = 3;
 
 
 function checkReady(){
@@ -293,7 +503,9 @@ function checkReady(){
 
 
 function playgame(){
-    
+
+    input.init();
+    taskbar.init();
     blupi.push(new Blupi(getRand(groundImg.width),-getRand(200)));
     ground.getGroundEdge();
     loop();
@@ -309,7 +521,7 @@ function getRand(max)
 
 function loop()
 {        
-    
+    input.startFrame();
     blupi.push(new Blupi(getRand(groundImg.width),-getRand(200)));
     blupi[blupi.length-1].destination = groundImg.width *2;
     
@@ -321,6 +533,7 @@ function loop()
         blupi[a].update();
     }
     render();
+    input.endFrame();
     requestAnimationFrame(loop);
 }
 
@@ -336,4 +549,9 @@ function render(){
     for(let a=0;a<blupi.length;a++)
         blupi[a].draw();
     blupi[0].draw();
+    taskbar.draw();
+        
+    
 }
+
+
